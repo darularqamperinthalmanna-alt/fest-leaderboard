@@ -3,18 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ARQAMIYYA ART'S FEST LIVE RESULT</title>
+    <title>ARQAMIYYA ART'S FEST LIVE</title>
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet">
-
     <style>
         body { background:#ffffff; color:black; font-family:'Arial',sans-serif; }
         .glass { background:rgba(0,0,0,0.05); backdrop-filter:blur(14px); border:1px solid rgba(0,0,0,0.12); }
         .live-dot { width:10px; height:10px; background:red; border-radius:50%; display:inline-block; margin-left:8px; box-shadow: 0 0 10px red; }
-        .input-dark { background: rgba(255,255,255,0.4); border: 1px solid rgba(0,0,0,0.2); color: black; border-radius: 4px; padding: 4px; text-align: center; font-size: 12px; }
-        #admin-panel { display: none; }
         .champion-card { transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
         .progress-glow { box-shadow: 0 0 15px rgba(79, 70, 229, 0.4); }
     </style>
@@ -23,7 +20,7 @@
 <body class="min-h-screen flex flex-col items-center py-8 px-4">
 
 <header class="flex flex-col items-center gap-3 mb-8 text-center">
-    <img src="logo.png" class="w-48 cursor-pointer hover:scale-110 transition-transform" onclick="unlockAdmin()">
+    <img src="logo.png" class="w-48">
     <div>
         <h1 class="text-2xl md:text-4xl font-black uppercase tracking-tight">
             ARQAMIYYA ART'S<span class="text-indigo-500"> FEST</span>
@@ -41,46 +38,20 @@
     <div id="cat-display-container"></div>
 </div>
 
-<div id="admin-panel" class="w-full max-w-4xl mt-10 p-8 glass rounded-3xl border-2 border-dashed border-indigo-500/50 mb-20">
-    <div class="flex justify-between items-center mb-8 border-b border-black/10 pb-4">
-        <h3 class="text-indigo-600 font-black tracking-widest uppercase text-xl">System Management</h3>
-        <div class="flex gap-2">
-            <button onclick="saveData()" class="bg-green-600 px-4 py-2 rounded-lg font-bold text-[10px] uppercase text-white">Save Changes</button>
-            <button onclick="document.getElementById('admin-panel').style.display='none'" class="bg-red-600 px-4 py-2 rounded-lg font-bold text-[10px] uppercase text-white">Close</button>
-        </div>
-    </div>
-
-    <div class="mb-10">
-        <h4 class="text-xs text-indigo-700 mb-4 font-bold tracking-widest uppercase underline">Main Team Scores</h4>
-        <div id="admin-main-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
-    </div>
-
-    <div>
-        <h4 class="text-xs text-indigo-700 mb-4 font-bold tracking-widest uppercase underline">Category Rankings</h4>
-        <div id="admin-cat-tabs" class="flex gap-2 mb-4 overflow-x-auto pb-2">
-             <button onclick="renderAdminCat('subJunior')" class="bg-indigo-600 text-white px-4 py-2 rounded text-[10px] font-bold">SUB-JUNIOR</button>
-             <button onclick="renderAdminCat('junior')" class="bg-indigo-600 text-white px-4 py-2 rounded text-[10px] font-bold">JUNIOR</button>
-             <button onclick="renderAdminCat('senior')" class="bg-indigo-600 text-white px-4 py-2 rounded text-[10px] font-bold">SENIOR</button>
-        </div>
-        <div id="admin-cat-editor" class="space-y-2 bg-black/5 p-4 rounded-xl"></div>
-    </div>
-</div>
-
 <script>
-    const socket = io(); // Initialize Live Connection
+    const socket = io();
     const TARGET_MAX_POINTS = 5000; 
-    
     let festData = {
-        overall: [{ name: "ASKARIYYA", points: 0 }, { name: "KUTHAIBA", points: 0 }],
+        overall: [],
         categories: { subJunior: [], junior: [], senior: [] }
     };
 
-    // Listen for data from server
     socket.on('initData', (data) => { festData = data; render(); });
     socket.on('dataChanged', (data) => { festData = data; render(); });
 
     function render() {
-        // Sort and Render Overall
+        if (!festData.overall) return;
+
         const sortedOverall = [...festData.overall].sort((a,b) => b.points - a.points);
         document.getElementById('overall-body').innerHTML = sortedOverall.map((t,i) => {
             const progress = Math.min((t.points / TARGET_MAX_POINTS) * 100, 100);
@@ -109,7 +80,6 @@
             `;
         }).join('');
 
-        // Render Categories
         const categories = [
             { id: 'subJunior', label: 'SUB-JUNIOR', color: 'text-cyan-600', bg: 'bg-cyan-100' },
             { id: 'junior', label: 'JUNIOR', color: 'text-indigo-600', bg: 'bg-indigo-100' },
@@ -138,48 +108,6 @@
                 </div>
             `;
         }).join('');
-
-        updateAdminPanels();
-    }
-
-    function updateAdminPanels() {
-        document.getElementById('admin-main-grid').innerHTML = festData.overall.map((t, i) => `
-            <div class="bg-white p-4 rounded-xl flex items-center justify-between border border-black/10">
-                <span class="text-xs font-bold uppercase">${t.name}</span>
-                <input type="number" value="${t.points}" onchange="updateMainScore(${i}, this.value)" class="input-dark w-24 text-xl font-black">
-            </div>
-        `).join('');
-    }
-
-    function updateMainScore(index, val) {
-        festData.overall[index].points = parseInt(val) || 0;
-    }
-
-    function renderAdminCat(catId) {
-        document.getElementById('admin-cat-editor').innerHTML = `
-            ${festData.categories[catId].map((p, i) => `
-                <div class="grid grid-cols-4 gap-2 items-center mb-2">
-                    <span class="text-[10px] font-bold">RANK ${i+1}</span>
-                    <input type="text" value="${p.name}" onchange="festData.categories['${catId}'][${i}].name = this.value" class="input-dark text-left">
-                    <input type="text" value="${p.team}" onchange="festData.categories['${catId}'][${i}].team = this.value" class="input-dark uppercase">
-                    <input type="number" value="${p.pts}" onchange="festData.categories['${catId}'][${i}].pts = parseInt(this.value) || 0" class="input-dark font-black">
-                </div>
-            `).join('')}
-        `;
-    }
-
-    function unlockAdmin() {
-        if(prompt("Password:") === "456456") {
-            document.getElementById('admin-panel').style.display = 'block';
-            renderAdminCat('subJunior');
-            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
-        }
-    }
-
-    function saveData() {
-        // Send data to server so everyone sees it
-        socket.emit('updateData', festData);
-        alert("Data Synchronized and Saved Live!");
     }
 
     gsap.to(".live-dot", { opacity: 0.3, repeat: -1, yoyo: true, duration: 0.8 });
