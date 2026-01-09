@@ -3,105 +3,51 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>ARQAMIYYA ART'S FEST LIVE</title>
+    <title>LIVE LEADERBOARD</title>
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
     <style>
-        body { background:#ffffff; font-family: sans-serif; overflow-x: hidden; }
-        .glass { background:rgba(0,0,0,0.03); backdrop-filter:blur(10px); border:1px solid rgba(0,0,0,0.1); }
-        .live-dot { width:12px; height:12px; background:red; border-radius:50%; display:inline-block; box-shadow: 0 0 12px red; }
-        .champion-card { transition: transform 0.4s ease; }
-        .champion-card:hover { transform: translateY(-5px); }
+        body { background: #ffffff; font-family: sans-serif; }
+        .live-dot { width: 12px; height: 12px; background: red; border-radius: 50%; display: inline-block; box-shadow: 0 0 10px red; animation: blink 1s infinite; }
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        .card { background: rgba(0,0,0,0.03); border: 1px solid rgba(0,0,0,0.1); border-radius: 2rem; transition: all 0.3s ease; }
     </style>
 </head>
 <body class="min-h-screen py-10 px-4">
 
-<header class="flex flex-col items-center text-center mb-16 w-full">
-    <div class="mb-8">
-        <img src="logo.png" alt="Logo" class="w-48 md:w-64 drop-shadow-xl transition-transform hover:scale-110 duration-500">
-    </div>
-    
-    <div class="relative">
-        <h1 class="text-3xl md:text-6xl font-black uppercase tracking-tighter text-slate-900">
+    <header class="flex flex-col items-center text-center mb-12">
+        <img src="logo.png" class="w-48 mb-6 drop-shadow-xl">
+        <h1 class="text-3xl md:text-5xl font-black uppercase tracking-tighter">
             ARQAMIYYA ART'S <span class="text-indigo-600">FEST</span>
-            <span class="live-dot ml-3 mb-1"></span>
+            <span class="live-dot ml-2"></span>
         </h1>
-        <div class="h-1 w-24 bg-indigo-600 mx-auto mt-2 rounded-full"></div>
-        <p class="text-indigo-800 font-bold uppercase tracking-[0.5em] text-[10px] md:text-sm mt-4 opacity-80">
-            Overall Live Leaderboard 2026
-        </p>
-    </div>
-</header>
+        <p class="text-indigo-800 font-bold uppercase tracking-[0.4em] text-xs mt-3">Live Result Center 2026</p>
+    </header>
 
-<div id="overall-body" class="max-w-4xl mx-auto space-y-6 mb-20">
-    </div>
+    <div id="overall-display" class="max-w-4xl mx-auto space-y-6"></div>
 
-<div id="cat-display-container" class="max-w-3xl mx-auto grid grid-cols-1 md:grid-cols-1 gap-8">
-    </div>
+    <script>
+        const socket = io();
+        socket.on('initData', (data) => render(data));
+        socket.on('dataChanged', (data) => render(data));
 
-<script>
-    const socket = io();
-    let festData = { overall: [], categories: { subJunior: [], junior: [], senior: [] } };
-
-    socket.on('initData', (data) => { festData = data; render(); });
-    socket.on('dataChanged', (data) => { festData = data; render(); });
-
-    function render() {
-        if (!festData.overall) return;
-
-        // Render Main Leaderboard
-        const sorted = [...festData.overall].sort((a,b) => b.points - a.points);
-        document.getElementById('overall-body').innerHTML = sorted.map((t,i) => `
-            <div class="champion-card glass rounded-[2.5rem] p-10 border-l-[12px] ${i===0?'border-yellow-400 bg-amber-50/30':'border-indigo-500 bg-slate-50/50'} shadow-sm">
-                <div class="flex flex-col md:flex-row justify-between items-center gap-6">
-                    <div class="flex items-center gap-8">
-                        <span class="text-5xl md:text-7xl font-black ${i===0?'text-yellow-500':'text-slate-300'}">0${i+1}</span>
-                        <div>
-                            <h2 class="text-2xl md:text-4xl font-black uppercase tracking-tight text-slate-800">${t.name}</h2>
-                            <p class="text-indigo-600 font-bold text-[10px] tracking-widest mt-1">CURRENT RANKING</p>
-                        </div>
+        function render(data) {
+            if (!data || !data.overall) return;
+            const sorted = [...data.overall].sort((a,b) => b.points - a.points);
+            
+            document.getElementById('overall-display').innerHTML = sorted.map((t, i) => `
+                <div class="card p-8 flex justify-between items-center ${i === 0 ? 'border-yellow-500 bg-yellow-50/50' : ''}">
+                    <div class="flex items-center gap-6">
+                        <span class="text-5xl font-black ${i === 0 ? 'text-yellow-600' : 'text-slate-300'}">0${i+1}</span>
+                        <h2 class="text-2xl md:text-4xl font-black uppercase text-slate-800">${t.name}</h2>
                     </div>
-                    <div class="text-center md:text-right bg-white/50 px-8 py-4 rounded-3xl border border-black/5">
-                        <span class="text-5xl md:text-7xl font-black text-slate-900">${t.points}</span>
-                        <p class="text-emerald-600 font-black text-[10px] uppercase mt-1">Total Points</p>
+                    <div class="text-right">
+                        <span class="text-5xl md:text-6xl font-black text-slate-900">${t.points}</span>
+                        <p class="text-indigo-600 font-bold text-xs uppercase tracking-widest">Points</p>
                     </div>
                 </div>
-            </div>
-        `).join('');
-
-        // Render Category Rankers
-        const cats = [
-            { id: 'subJunior', label: 'SUB-JUNIOR', color: 'text-cyan-600', bg: 'bg-cyan-50' },
-            { id: 'junior', label: 'JUNIOR', color: 'text-indigo-600', bg: 'bg-indigo-50' },
-            { id: 'senior', label: 'SENIOR', color: 'text-purple-600', bg: 'bg-purple-50' }
-        ];
-
-        document.getElementById('cat-display-container').innerHTML = cats.map(c => `
-            <div class="glass rounded-3xl overflow-hidden shadow-sm border border-black/5">
-                <div class="${c.bg} p-4 text-center text-xs font-black ${c.color} tracking-[0.2em] border-b border-black/5 uppercase">
-                    ${c.label} Top Performers
-                </div>
-                <div class="p-4 space-y-2">
-                    ${(festData.categories[c.id] || []).sort((a,b)=>b.pts-a.pts).map((p,i)=>`
-                        <div class="flex justify-between items-center p-4 rounded-2xl hover:bg-black/[0.02] transition-colors">
-                            <div class="flex items-center gap-4">
-                                <span class="text-[10px] font-bold text-slate-400">#${i+1}</span>
-                                <div>
-                                    <p class="text-sm font-black uppercase text-slate-700">${p.name || '---'}</p>
-                                    <p class="text-[9px] text-indigo-500 font-bold uppercase tracking-wider">${p.team || '---'}</p>
-                                </div>
-                            </div>
-                            <div class="text-xl font-black text-amber-600">${p.pts || 0}</div>
-                        </div>
-                    `).join('')}
-                </div>
-            </div>
-        `).join('');
-    }
-
-    // Pulsing live indicator
-    gsap.to(".live-dot", { opacity: 0.2, repeat: -1, yoyo: true, duration: 0.8 });
-</script>
+            `).join('');
+        }
+    </script>
 </body>
 </html>
