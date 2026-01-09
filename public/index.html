@@ -7,49 +7,42 @@
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet">
     <style>
-        body { background:#ffffff; color:black; font-family:'Arial',sans-serif; }
-        .glass { background:rgba(0,0,0,0.05); backdrop-filter:blur(14px); border:1px solid rgba(0,0,0,0.12); }
-        .live-dot { width:10px; height:10px; background:red; border-radius:50%; display:inline-block; margin-left:8px; box-shadow: 0 0 10px red; }
-        .champion-card { transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
-        .progress-glow { box-shadow: 0 0 15px rgba(79, 70, 229, 0.4); }
+        body { background:#ffffff; font-family: sans-serif; overflow-x: hidden; }
+        .glass { background:rgba(0,0,0,0.03); backdrop-filter:blur(10px); border:1px solid rgba(0,0,0,0.1); }
+        .live-dot { width:12px; height:12px; background:red; border-radius:50%; display:inline-block; box-shadow: 0 0 12px red; }
+        .champion-card { transition: transform 0.4s ease; }
+        .champion-card:hover { transform: translateY(-5px); }
     </style>
 </head>
+<body class="min-h-screen py-10 px-4">
 
-<body class="min-h-screen flex flex-col items-center py-8 px-4">
-
-<header class="flex flex-col items-center justify-center gap-4 mb-10 text-center w-full">
-    <div class="flex justify-center w-full">
-        <img src="logo.png" class="w-48 transition-transform hover:scale-105">
+<header class="flex flex-col items-center text-center mb-16 w-full">
+    <div class="mb-8">
+        <img src="logo.png" alt="Logo" class="w-48 md:w-64 drop-shadow-xl transition-transform hover:scale-110 duration-500">
     </div>
     
-    <div class="flex flex-col items-center">
-        <h1 class="text-2xl md:text-5xl font-black uppercase tracking-tight flex items-center justify-center">
-            ARQAMIYYA ART'S<span class="text-indigo-500 ml-2"> FEST</span>
-            <span class="live-dot ml-3"></span>
+    <div class="relative">
+        <h1 class="text-3xl md:text-6xl font-black uppercase tracking-tighter text-slate-900">
+            ARQAMIYYA ART'S <span class="text-indigo-600">FEST</span>
+            <span class="live-dot ml-3 mb-1"></span>
         </h1>
-        <p class="text-indigo-700 font-bold uppercase text-[10px] md:text-xs tracking-[0.4em] mt-2">
-            SAKSHYAM LEADERBOARD 2025-26
+        <div class="h-1 w-24 bg-indigo-600 mx-auto mt-2 rounded-full"></div>
+        <p class="text-indigo-800 font-bold uppercase tracking-[0.5em] text-[10px] md:text-sm mt-4 opacity-80">
+            Overall Live Leaderboard 2026
         </p>
     </div>
 </header>
 
-<div class="w-full max-w-4xl space-y-6 mb-12">
-    <div id="overall-body" class="space-y-4"></div>
-</div>
+<div id="overall-body" class="max-w-4xl mx-auto space-y-6 mb-20">
+    </div>
 
-<div class="w-full max-w-2xl space-y-6">
-    <div id="cat-display-container"></div>
-</div>
+<div id="cat-display-container" class="max-w-3xl mx-auto grid grid-cols-1 md:grid-cols-1 gap-8">
+    </div>
 
 <script>
     const socket = io();
-    const TARGET_MAX_POINTS = 5000; 
-    let festData = {
-        overall: [],
-        categories: { subJunior: [], junior: [], senior: [] }
-    };
+    let festData = { overall: [], categories: { subJunior: [], junior: [], senior: [] } };
 
     socket.on('initData', (data) => { festData = data; render(); });
     socket.on('dataChanged', (data) => { festData = data; render(); });
@@ -57,67 +50,58 @@
     function render() {
         if (!festData.overall) return;
 
-        const sortedOverall = [...festData.overall].sort((a,b) => b.points - a.points);
-        document.getElementById('overall-body').innerHTML = sortedOverall.map((t,i) => {
-            const progress = Math.min((t.points / TARGET_MAX_POINTS) * 100, 100);
-            const rankColor = i === 0 ? 'text-yellow-600' : 'text-slate-600';
-            const bgColor = i === 0 ? 'bg-indigo-100' : 'bg-gray-100';
-            
-            return `
-                <div class="champion-card glass rounded-[2rem] p-8 border-l-8 ${i === 0 ? 'border-yellow-500' : 'border-indigo-500'} ${bgColor}">
-                    <div class="flex flex-col md:flex-row justify-between items-center gap-4">
-                        <div class="flex items-center gap-6">
-                            <span class="text-4xl md:text-6xl font-black ${rankColor}">0${i+1}</span>
-                            <div>
-                                <h2 class="text-xl md:text-3xl font-black tracking-widest uppercase">${t.name}</h2>
-                                <p class="text-indigo-600 text-[10px] font-bold tracking-[0.3em]">CHAMPIONSHIP RACE</p>
-                            </div>
-                        </div>
-                        <div class="text-center md:text-right">
-                            <span class="text-4xl md:text-6xl font-black text-black">${t.points}</span>
-                            <p class="text-green-600 font-bold text-[10px]">TOTAL POINTS</p>
+        // Render Main Leaderboard
+        const sorted = [...festData.overall].sort((a,b) => b.points - a.points);
+        document.getElementById('overall-body').innerHTML = sorted.map((t,i) => `
+            <div class="champion-card glass rounded-[2.5rem] p-10 border-l-[12px] ${i===0?'border-yellow-400 bg-amber-50/30':'border-indigo-500 bg-slate-50/50'} shadow-sm">
+                <div class="flex flex-col md:flex-row justify-between items-center gap-6">
+                    <div class="flex items-center gap-8">
+                        <span class="text-5xl md:text-7xl font-black ${i===0?'text-yellow-500':'text-slate-300'}">0${i+1}</span>
+                        <div>
+                            <h2 class="text-2xl md:text-4xl font-black uppercase tracking-tight text-slate-800">${t.name}</h2>
+                            <p class="text-indigo-600 font-bold text-[10px] tracking-widest mt-1">CURRENT RANKING</p>
                         </div>
                     </div>
-                    <div class="w-full bg-black/10 h-3 mt-6 rounded-full overflow-hidden">
-                        <div class="h-full bg-gradient-to-r from-indigo-600 to-indigo-400 progress-glow" style="width: ${progress}%"></div>
+                    <div class="text-center md:text-right bg-white/50 px-8 py-4 rounded-3xl border border-black/5">
+                        <span class="text-5xl md:text-7xl font-black text-slate-900">${t.points}</span>
+                        <p class="text-emerald-600 font-black text-[10px] uppercase mt-1">Total Points</p>
                     </div>
                 </div>
-            `;
-        }).join('');
+            </div>
+        `).join('');
 
-        const categories = [
-            { id: 'subJunior', label: 'SUB-JUNIOR', color: 'text-cyan-600', bg: 'bg-cyan-100' },
-            { id: 'junior', label: 'JUNIOR', color: 'text-indigo-600', bg: 'bg-indigo-100' },
-            { id: 'senior', label: 'SENIOR', color: 'text-purple-600', bg: 'bg-purple-100' }
+        // Render Category Rankers
+        const cats = [
+            { id: 'subJunior', label: 'SUB-JUNIOR', color: 'text-cyan-600', bg: 'bg-cyan-50' },
+            { id: 'junior', label: 'JUNIOR', color: 'text-indigo-600', bg: 'bg-indigo-50' },
+            { id: 'senior', label: 'SENIOR', color: 'text-purple-600', bg: 'bg-purple-50' }
         ];
 
-        document.getElementById('cat-display-container').innerHTML = categories.map(cat => {
-            const data = [...festData.categories[cat.id]].sort((a,b) => b.pts - a.pts);
-            return `
-                <div class="glass rounded-2xl overflow-hidden border border-black/10 mb-6">
-                    <div class="${cat.bg} p-3 text-center text-[10px] font-black ${cat.color} border-b border-black/10 tracking-widest">${cat.label} TOP 5</div>
-                    <div class="p-2">
-                        ${data.map((p, i) => `
-                            <div class="flex justify-between items-center p-3 border-b border-black/5 last:border-0">
-                                <div class="flex items-center gap-4">
-                                    <span class="text-[9px] font-bold text-gray-600">#${i+1}</span>
-                                    <div>
-                                        <p class="text-[11px] font-bold uppercase tracking-tight">${p.name}</p>
-                                        <p class="text-[8px] text-indigo-600 font-bold uppercase">${p.team}</p>
-                                    </div>
-                                </div>
-                                <div class="text-lg font-black text-yellow-600">${p.pts}</div>
-                            </div>
-                        `).join('')}
-                    </div>
+        document.getElementById('cat-display-container').innerHTML = cats.map(c => `
+            <div class="glass rounded-3xl overflow-hidden shadow-sm border border-black/5">
+                <div class="${c.bg} p-4 text-center text-xs font-black ${c.color} tracking-[0.2em] border-b border-black/5 uppercase">
+                    ${c.label} Top Performers
                 </div>
-            `;
-        }).join('');
+                <div class="p-4 space-y-2">
+                    ${(festData.categories[c.id] || []).sort((a,b)=>b.pts-a.pts).map((p,i)=>`
+                        <div class="flex justify-between items-center p-4 rounded-2xl hover:bg-black/[0.02] transition-colors">
+                            <div class="flex items-center gap-4">
+                                <span class="text-[10px] font-bold text-slate-400">#${i+1}</span>
+                                <div>
+                                    <p class="text-sm font-black uppercase text-slate-700">${p.name || '---'}</p>
+                                    <p class="text-[9px] text-indigo-500 font-bold uppercase tracking-wider">${p.team || '---'}</p>
+                                </div>
+                            </div>
+                            <div class="text-xl font-black text-amber-600">${p.pts || 0}</div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `).join('');
     }
 
-    gsap.to(".live-dot", { opacity: 0.3, repeat: -1, yoyo: true, duration: 0.8 });
+    // Pulsing live indicator
+    gsap.to(".live-dot", { opacity: 0.2, repeat: -1, yoyo: true, duration: 0.8 });
 </script>
 </body>
 </html>
-
-
