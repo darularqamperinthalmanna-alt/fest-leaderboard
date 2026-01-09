@@ -1,15 +1,14 @@
 const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
-const { createClient } = require('redis'); // Use Redis for Render persistence
+const { createClient } = require('redis'); // Added Redis for Render persistence
 const path = require('path');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// --- REDIS CONFIGURATION ---
-// This connects to your "fest-db" using the Environment Variable you set
+// --- DATABASE CONFIGURATION ---
 const redisClient = createClient({
     url: process.env.REDIS_URL || 'redis://localhost:6379'
 });
@@ -17,11 +16,11 @@ const redisClient = createClient({
 redisClient.on('error', err => console.log('Redis Connection Error:', err));
 
 async function startServer() {
-    // Connect to the database
+    // 1. Connect to Redis Database
     await redisClient.connect();
     console.log("Connected to Redis successfully");
 
-    // Load existing data from Redis or use your default structure
+    // 2. Load existing data from Redis (instead of local data.json)
     let savedData = await redisClient.get('festData');
     
     let festData = savedData ? JSON.parse(savedData) : {
@@ -48,16 +47,16 @@ async function startServer() {
         socket.on('updateData', async (newData) => {
             festData = newData;
             
-            // Save to Redis so scores aren't lost when Render restarts
+            // Save to Redis (This ensures data persists on Render restarts)
             await redisClient.set('festData', JSON.stringify(festData));
             
             // Broadcast to all other users
             io.emit('dataChanged', festData);
-            console.log('Scores updated and saved to Redis!');
+            console.log('Scores updated and saved to cloud database!');
         });
     });
 
-    // Render uses dynamic ports; fallback to 3000 for local testing
+    // Use process.env.PORT for Render, default to 3000 for local testing
     const PORT = process.env.PORT || 3000;
     server.listen(PORT, '0.0.0.0', () => {
         console.log(`-----------------------------------`);
