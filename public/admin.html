@@ -3,37 +3,37 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fest Admin - Secure Point Management</title>
+    <title>Fest Admin - Secure Access</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="/socket.io/socket.io.js"></script>
     <style>
         .admin-input { background: #f3f4f6; border: 2px solid #e5e7eb; padding: 12px; border-radius: 12px; font-weight: 900; font-size: 1.5rem; width: 100%; text-align: center; }
         .admin-input:focus { border-color: #4f46e5; outline: none; background: white; }
-        #auth-screen { background: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%); transition: opacity 0.5s ease; }
+        #auth-screen { background: #0f172a; }
         #management-content { display: none; }
         .tab-active { background-color: #4f46e5 !important; color: white !important; }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen">
 
-    <div id="auth-screen" class="fixed inset-0 z-50 flex items-center justify-center p-6">
-        <div class="bg-white p-8 rounded-[2.5rem] shadow-2xl w-full max-w-md text-center border border-white/20">
-            <div class="w-20 h-20 bg-indigo-100 rounded-full flex items-center justify-center mx-auto mb-6">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+    <div id="auth-screen" class="fixed inset-0 z-[100] flex items-center justify-center p-6">
+        <div class="bg-white p-8 rounded-[2rem] shadow-2xl w-full max-w-md text-center">
+            <div class="mb-6 inline-flex items-center justify-center w-16 h-16 bg-red-100 text-red-600 rounded-2xl">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
                 </svg>
             </div>
-            <h2 class="text-2xl font-black text-slate-800 mb-2 uppercase tracking-tight">System Locked</h2>
-            <p class="text-slate-500 text-sm mb-8 font-medium">Enter the administrator password to manage Arqamiyya Art's Fest scores.</p>
+            <h2 class="text-2xl font-black text-slate-800 mb-2">RESTRICTED AREA</h2>
+            <p class="text-slate-500 text-sm mb-8">Enter Authorization Key to access Score Management</p>
             
-            <input type="password" id="pass-field" placeholder="••••••" 
-                   class="w-full p-4 border-2 border-slate-100 bg-slate-50 rounded-2xl mb-4 text-center text-2xl tracking-widest outline-none focus:border-indigo-500 focus:bg-white transition-all">
+            <input type="password" id="pass-field" placeholder="Enter Password" 
+                   class="w-full p-4 border-2 border-slate-100 bg-slate-50 rounded-2xl mb-4 text-center text-xl tracking-widest outline-none focus:border-indigo-500 transition-all">
             
-            <button onclick="checkPass()" 
-                    class="w-full bg-indigo-600 text-white font-black py-4 rounded-2xl hover:bg-indigo-700 transition-all shadow-lg shadow-indigo-200 active:scale-95">
-                UNLOCK DASHBOARD
+            <button onclick="verifyAccess()" 
+                    class="w-full bg-slate-900 text-white font-black py-4 rounded-2xl hover:bg-black transition-all shadow-xl active:scale-95">
+                VERIFY & UNLOCK
             </button>
-            <p id="err-msg" class="text-red-500 mt-4 font-bold text-sm hidden">Access Denied: Incorrect Password</p>
+            <p id="err-msg" class="text-red-600 mt-4 font-bold text-sm hidden">Invalid Authorization Key</p>
         </div>
     </div>
 
@@ -41,12 +41,12 @@
         <div class="max-w-5xl mx-auto">
             <header class="flex flex-col md:flex-row justify-between items-center gap-4 mb-10 bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
                 <div>
-                    <h1 class="text-2xl font-black text-slate-800">POINT MANAGEMENT</h1>
-                    <p class="text-indigo-600 font-bold text-xs tracking-widest uppercase">Admin Control Center 2026</p>
+                    <h1 class="text-2xl font-black text-slate-800 uppercase">Point Management</h1>
+                    <p class="text-indigo-600 font-bold text-xs tracking-widest">AUTHORIZED ACCESS ONLY</p>
                 </div>
-                <div class="flex gap-3">
-                    <button onclick="location.reload()" class="bg-slate-100 text-slate-600 px-6 py-3 rounded-2xl font-bold hover:bg-slate-200 transition-all">LOCK</button>
-                    <button onclick="saveData()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-2xl font-black transition-all shadow-lg shadow-indigo-200">
+                <div class="flex gap-2">
+                    <button onclick="location.reload()" class="bg-slate-100 text-slate-500 px-4 py-3 rounded-xl font-bold text-xs uppercase">Lock System</button>
+                    <button onclick="saveData()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-xl font-black transition-all shadow-lg shadow-indigo-200">
                         PUSH UPDATES LIVE
                     </button>
                 </div>
@@ -54,17 +54,17 @@
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div class="lg:col-span-1 space-y-4">
-                    <h2 class="font-black text-slate-500 text-sm uppercase px-2">Main Team Totals</h2>
+                    <h2 class="font-black text-slate-400 text-xs uppercase px-2 tracking-widest">Main Teams</h2>
                     <div id="main-editor" class="space-y-4"></div>
                 </div>
 
                 <div class="lg:col-span-2 bg-white p-8 rounded-[2rem] shadow-sm border border-slate-200">
-                    <div class="flex gap-4 mb-6 border-b pb-4 overflow-x-auto">
-                        <button id="btn-subJunior" onclick="changeTab('subJunior')" class="tab-btn font-black text-xs uppercase px-4 py-2 rounded-lg bg-slate-100 transition-all">Sub-Junior</button>
-                        <button id="btn-junior" onclick="changeTab('junior')" class="tab-btn font-black text-xs uppercase px-4 py-2 rounded-lg bg-slate-100 transition-all">Junior</button>
-                        <button id="btn-senior" onclick="changeTab('senior')" class="tab-btn font-black text-xs uppercase px-4 py-2 rounded-lg bg-slate-100 transition-all">Senior</button>
+                    <div class="flex gap-4 mb-6 border-b border-slate-100 pb-4 overflow-x-auto">
+                        <button id="tab-subJunior" onclick="changeTab('subJunior')" class="tab-btn font-black text-[10px] uppercase px-4 py-2 rounded-lg bg-slate-100 transition-all">Sub-Junior</button>
+                        <button id="tab-junior" onclick="changeTab('junior')" class="tab-btn font-black text-[10px] uppercase px-4 py-2 rounded-lg bg-slate-100 transition-all">Junior</button>
+                        <button id="tab-senior" onclick="changeTab('senior')" class="tab-btn font-black text-[10px] uppercase px-4 py-2 rounded-lg bg-slate-100 transition-all">Senior</button>
                     </div>
-                    <div id="cat-editor" class="space-y-4"></div>
+                    <div id="cat-editor" class="space-y-3"></div>
                 </div>
             </div>
         </div>
@@ -75,30 +75,29 @@
         let festData = {};
         let currentTab = 'subJunior';
 
-        // 1. Password Verification
-        function checkPass() {
+        // 1. Authorization Function
+        function verifyAccess() {
+            const secret = "783asu"; // Your requested password
             const input = document.getElementById('pass-field').value;
-            if(input === "456456") {
-                document.getElementById('auth-screen').style.opacity = '0';
-                setTimeout(() => {
-                    document.getElementById('auth-screen').style.display = 'none';
-                    document.getElementById('management-content').style.display = 'block';
-                    changeTab('subJunior'); // Initial UI setup
-                }, 500);
+
+            if(input === secret) {
+                document.getElementById('auth-screen').style.display = 'none';
+                document.getElementById('management-content').style.display = 'block';
+                changeTab('subJunior');
             } else {
                 const err = document.getElementById('err-msg');
                 err.classList.remove('hidden');
                 document.getElementById('pass-field').value = '';
-                setTimeout(() => err.classList.add('hidden'), 2500);
+                setTimeout(() => err.classList.add('hidden'), 2000);
             }
         }
 
-        // Allow 'Enter' key to submit password
-        document.getElementById('pass-field').addEventListener('keypress', function (e) {
-            if (e.key === 'Enter') checkPass();
+        // Support 'Enter' key press
+        document.getElementById('pass-field').addEventListener('keypress', (e) => {
+            if(e.key === 'Enter') verifyAccess();
         });
 
-        // 2. Data Logic
+        // 2. Data Handling
         socket.on('initData', (data) => { 
             festData = data; 
             renderAll(); 
@@ -107,41 +106,45 @@
         function renderAll() {
             if(!festData.overall) return;
 
-            // Render Teams
+            // Render Team Score Inputs
             document.getElementById('main-editor').innerHTML = festData.overall.map((t, i) => `
                 <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
                     <label class="block text-[10px] font-black text-slate-400 mb-2 uppercase">${t.name}</label>
-                    <input type="number" value="${t.points}" onchange="festData.overall[${i}].points = parseInt(this.value) || 0" class="admin-input">
+                    <input type="number" value="${t.points}" onchange="updateTeamScore(${i}, this.value)" class="admin-input">
                 </div>
             `).join('');
 
-            // Render Individual Ranks
+            // Render Category Ranking Inputs
             document.getElementById('cat-editor').innerHTML = festData.categories[currentTab].map((p, i) => `
                 <div class="grid grid-cols-12 gap-3 items-center bg-slate-50 p-3 rounded-xl border border-slate-100">
-                    <div class="col-span-1 text-[10px] font-black text-slate-400">#${i+1}</div>
+                    <div class="col-span-1 text-[10px] font-black text-slate-300">#${i+1}</div>
                     <div class="col-span-5">
                         <input type="text" value="${p.name}" onchange="festData.categories['${currentTab}'][${i}].name=this.value" class="w-full bg-transparent border-b border-slate-200 focus:border-indigo-500 outline-none uppercase font-bold text-sm" placeholder="Student Name">
                     </div>
                     <div class="col-span-3">
-                        <input type="text" value="${p.team}" onchange="festData.categories['${currentTab}'][${i}].team=this.value" class="w-full text-[10px] bg-white border rounded p-1 uppercase font-black text-indigo-600" placeholder="Team">
+                        <input type="text" value="${p.team}" onchange="festData.categories['${currentTab}'][${i}].team=this.value" class="w-full text-[10px] bg-white border rounded p-1 uppercase font-black text-indigo-600 text-center" placeholder="Team">
                     </div>
                     <div class="col-span-3 text-right">
-                        <input type="number" value="${p.pts}" onchange="festData.categories['${currentTab}'][${i}].pts=parseInt(this.value) || 0" class="w-full font-black text-right bg-transparent outline-none text-lg" placeholder="Pts">
+                        <input type="number" value="${p.pts}" onchange="festData.categories['${currentTab}'][${i}].pts=parseInt(this.value) || 0" class="w-full font-black text-right bg-transparent outline-none text-lg">
                     </div>
                 </div>
             `).join('');
+        }
+
+        function updateTeamScore(idx, val) {
+            festData.overall[idx].points = parseInt(val) || 0;
         }
 
         function changeTab(tab) {
             currentTab = tab;
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('tab-active'));
-            document.getElementById('btn-' + tab).classList.add('tab-active');
+            document.getElementById('tab-' + tab).classList.add('tab-active');
             renderAll();
         }
 
         function saveData() {
             socket.emit('updateData', festData);
-            alert("✅ PUSH SUCCESSFUL: All audience screens are now updated!");
+            alert("BROADCAST SUCCESS: Data is now live on all audience screens.");
         }
     </script>
 </body>
