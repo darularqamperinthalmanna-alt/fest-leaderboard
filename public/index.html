@@ -3,86 +3,188 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>LIVE LEADERBOARD | ARQAMIYYA ART'S FEST</title>
+    <title>ARQAMIYYA ART'S FEST LIVE RESULT</title>
     <script src="/socket.io/socket.io.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&display=swap" rel="stylesheet">
+
     <style>
-        body { background: #ffffff; font-family: sans-serif; overflow-x: hidden; }
-        /* Professional glass effect for cards */
-        .card { 
-            background: rgba(0,0,0,0.03); 
-            border: 1px solid rgba(0,0,0,0.1); 
-            border-radius: 2.5rem; 
-            transition: transform 0.3s ease;
-        }
-        .card:hover { transform: translateY(-5px); }
-        /* Pulsing live indicator */
-        .live-dot { 
-            width: 12px; 
-            height: 12px; 
-            background: red; 
-            border-radius: 50%; 
-            display: inline-block; 
-            box-shadow: 0 0 10px red; 
-            animation: blink 1s infinite; 
-        }
-        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+        body { background:#ffffff; color:black; font-family:'Arial',sans-serif; overflow-x: hidden; }
+        .glass { background:rgba(0,0,0,0.05); backdrop-filter:blur(14px); border:1px solid rgba(0,0,0,0.12); }
+        .live-dot { width:10px; height:10px; background:red; border-radius:50%; display:inline-block; margin-left:8px; box-shadow: 0 0 10px red; }
+        .input-dark { background: rgba(255,255,255,0.4); border: 1px solid rgba(0,0,0,0.2); color: black; border-radius: 4px; padding: 4px; text-align: center; font-size: 12px; }
+        #admin-panel { display: none; }
+        .champion-card { transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1); }
+        .progress-glow { box-shadow: 0 0 15px rgba(79, 70, 229, 0.4); }
     </style>
 </head>
-<body class="min-h-screen py-10 px-4">
 
-    <header class="flex flex-col items-center text-center mb-16 w-full">
-        <div class="flex justify-center w-full mb-8">
-            <img src="logo.png" class="w-48 md:w-64 drop-shadow-2xl transition-transform hover:scale-105 duration-500">
+<body class="min-h-screen flex flex-col items-center py-8 px-4">
+
+<header class="flex flex-col items-center gap-3 mb-12 text-center">
+    <img src="logo.png" class="w-48 cursor-pointer hover:scale-110 transition-transform" onclick="unlockAdmin()">
+    <div>
+        <h1 class="text-2xl md:text-5xl font-black uppercase tracking-tight">
+            ARQAMIYYA ART'S<span class="text-indigo-500"> FEST</span>
+            <span class="live-dot"></span>
+        </h1>
+        <p class="text-indigo-700 tracking-[0.3em] text-[10px] font-bold uppercase mt-2">Overall Live Leaderboard 2026</p>
+    </div>
+</header>
+
+<div class="w-full max-w-4xl space-y-6 mb-12">
+    <div id="overall-body" class="space-y-6"></div>
+</div>
+
+<div class="w-full max-w-2xl space-y-6">
+    <div id="cat-display-container"></div>
+</div>
+
+<div id="admin-panel" class="w-full max-w-4xl mt-10 p-8 glass rounded-3xl border-2 border-dashed border-indigo-500/50 mb-20 shadow-2xl">
+    <div class="flex justify-between items-center mb-8 border-b border-black/10 pb-4">
+        <h3 class="text-indigo-600 font-black tracking-widest uppercase text-xl">System Management</h3>
+        <div class="flex gap-2">
+            <button onclick="saveData()" class="bg-green-600 px-6 py-2 rounded-lg font-bold text-[10px] uppercase text-white shadow-lg">Save Changes</button>
+            <button onclick="document.getElementById('admin-panel').style.display='none'" class="bg-red-600 px-6 py-2 rounded-lg font-bold text-[10px] uppercase text-white shadow-lg">Close</button>
         </div>
-        
-        <div class="relative inline-block">
-            <h1 class="text-3xl md:text-6xl font-black uppercase tracking-tighter text-slate-900">
-                ARQAMIYYA ART'S <span class="text-indigo-600">FEST</span>
-                <span class="live-dot ml-3 mb-1"></span>
-            </h1>
-            <div class="h-1.5 w-24 bg-indigo-600 mx-auto mt-2 rounded-full"></div>
-            <p class="text-indigo-800 font-bold uppercase tracking-[0.4em] text-[10px] md:text-sm mt-4 opacity-80">
-                Overall Live Leaderboard 2026
-            </p>
+    </div>
+
+    <div class="mb-10">
+        <h4 class="text-xs text-indigo-700 mb-4 font-bold tracking-widest uppercase underline">Main Team Scores</h4>
+        <div id="admin-main-grid" class="grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+    </div>
+
+    <div>
+        <h4 class="text-xs text-indigo-700 mb-4 font-bold tracking-widest uppercase underline">Category Rankings</h4>
+        <div id="admin-cat-tabs" class="flex gap-2 mb-4 overflow-x-auto pb-2">
+             <button onclick="renderAdminCat('subJunior')" class="bg-indigo-600 text-white px-4 py-2 rounded text-[10px] font-bold">SUB-JUNIOR</button>
+             <button onclick="renderAdminCat('junior')" class="bg-indigo-600 text-white px-4 py-2 rounded text-[10px] font-bold">JUNIOR</button>
+             <button onclick="renderAdminCat('senior')" class="bg-indigo-600 text-white px-4 py-2 rounded text-[10px] font-bold">SENIOR</button>
         </div>
-    </header>
+        <div id="admin-cat-editor" class="space-y-2 bg-black/5 p-4 rounded-xl"></div>
+    </div>
+</div>
 
-    <div id="overall-display" class="max-w-4xl mx-auto space-y-6">
-        </div>
+<script>
+    const socket = io();
+    const TARGET_MAX_POINTS = 5000; 
+    
+    let festData = {
+        overall: [{ name: "ASKARIYYA", points: 0 }, { name: "KUTHAIBA", points: 0 }],
+        categories: { 
+            subJunior: Array(5).fill({name: "", team: "", pts: 0}), 
+            junior: Array(5).fill({name: "", team: "", pts: 0}), 
+            senior: Array(5).fill({name: "", team: "", pts: 0}) 
+        }
+    };
 
-    <script>
-        const socket = io();
+    socket.on('initData', (data) => { festData = data; render(); });
+    socket.on('dataChanged', (data) => { festData = data; render(); });
 
-        // Listen for initial data and updates
-        socket.on('initData', (data) => render(data));
-        socket.on('dataChanged', (data) => render(data));
-
-        function render(data) {
-            if (!data || !data.overall) return;
+    function render() {
+        const sortedOverall = [...festData.overall].sort((a,b) => b.points - a.points);
+        document.getElementById('overall-body').innerHTML = sortedOverall.map((t,i) => {
+            const progress = Math.min((t.points / TARGET_MAX_POINTS) * 100, 100);
+            const rankColor = i === 0 ? 'text-yellow-600' : 'text-slate-600';
+            const bgColor = i === 0 ? 'bg-indigo-50/50' : 'bg-gray-50/50';
             
-            // Sort teams by points (highest first)
-            const sorted = [...data.overall].sort((a,b) => b.points - a.points);
-            
-            const container = document.getElementById('overall-display');
-            container.innerHTML = sorted.map((t, i) => `
-                <div class="card p-8 md:p-10 flex flex-row justify-between items-center ${i === 0 ? 'border-yellow-400 bg-amber-50/50 shadow-lg' : 'border-indigo-100 shadow-sm'}">
-                    <div class="flex items-center gap-6 md:gap-10">
-                        <span class="text-5xl md:text-7xl font-black ${i === 0 ? 'text-yellow-500' : 'text-slate-200'}">0${i+1}</span>
-                        
-                        <div>
-                            <h2 class="text-2xl md:text-4xl font-black uppercase text-slate-800 tracking-tight">${t.name}</h2>
-                            <p class="text-indigo-600 font-bold text-[10px] uppercase tracking-widest mt-1">Current Ranking</p>
+            return `
+                <div class="champion-card glass rounded-[2.5rem] p-8 border-l-[12px] ${i === 0 ? 'border-yellow-500' : 'border-indigo-500'} ${bgColor}">
+                    <div class="flex flex-col md:flex-row justify-between items-center gap-6">
+                        <div class="flex items-center gap-8">
+                            <span class="text-5xl md:text-7xl font-black ${rankColor}">0${i+1}</span>
+                            <div>
+                                <h2 class="text-2xl md:text-4xl font-black tracking-tight uppercase">${t.name}</h2>
+                                <p class="text-indigo-600 text-[10px] font-bold tracking-[0.3em] mt-1">CHAMPIONSHIP RACE</p>
+                            </div>
+                        </div>
+                        <div class="text-center md:text-right bg-white/50 px-8 py-4 rounded-3xl border border-black/5">
+                            <span class="text-5xl md:text-7xl font-black text-black">${t.points}</span>
+                            <p class="text-green-600 font-bold text-[10px] uppercase">Total Points</p>
                         </div>
                     </div>
-
-                    <div class="text-right bg-white/60 px-6 py-3 rounded-3xl border border-black/5">
-                        <span class="text-5xl md:text-7xl font-black text-slate-900">${t.points}</span>
-                        <p class="text-emerald-600 font-black text-[10px] uppercase tracking-tighter mt-1">Total Points</p>
+                    <div class="w-full bg-black/10 h-3.5 mt-8 rounded-full overflow-hidden border border-black/5">
+                        <div class="h-full bg-gradient-to-r from-indigo-700 via-indigo-500 to-indigo-400 progress-glow transition-all duration-1000" style="width: ${progress}%"></div>
                     </div>
+                </div>
+            `;
+        }).join('');
+
+        const categories = [
+            { id: 'subJunior', label: 'SUB-JUNIOR', color: 'text-cyan-600', bg: 'bg-cyan-50' },
+            { id: 'junior', label: 'JUNIOR', color: 'text-indigo-600', bg: 'bg-indigo-50' },
+            { id: 'senior', label: 'SENIOR', color: 'text-purple-600', bg: 'bg-purple-50' }
+        ];
+
+        document.getElementById('cat-display-container').innerHTML = categories.map(cat => {
+            const data = [...festData.categories[cat.id]].sort((a,b) => b.pts - a.pts);
+            return `
+                <div class="glass rounded-2xl overflow-hidden border border-black/10 mb-8 shadow-sm">
+                    <div class="${cat.bg} p-4 text-center text-xs font-black ${cat.color} border-b border-black/10 tracking-widest">${cat.label} TOP RANKERS</div>
+                    <div class="p-2">
+                        ${data.map((p, i) => `
+                            <div class="flex justify-between items-center p-4 border-b border-black/5 last:border-0 hover:bg-black/[0.02] transition-colors">
+                                <div class="flex items-center gap-5">
+                                    <span class="text-[10px] font-bold text-gray-400">#${i+1}</span>
+                                    <div>
+                                        <p class="text-sm font-black uppercase tracking-tight text-slate-700">${p.name || '---'}</p>
+                                        <p class="text-[9px] text-indigo-500 font-bold uppercase">${p.team || '---'}</p>
+                                    </div>
+                                </div>
+                                <div class="text-xl font-black text-amber-600">${p.pts}</div>
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
+            `;
+        }).join('');
+
+        updateAdminPanels();
+    }
+
+    function updateAdminPanels() {
+        if(document.getElementById('admin-panel').style.display === 'block') {
+            document.getElementById('admin-main-grid').innerHTML = festData.overall.map((t, i) => `
+                <div class="bg-white p-4 rounded-xl flex items-center justify-between border border-black/10 shadow-sm">
+                    <span class="text-xs font-bold uppercase text-slate-600">${t.name}</span>
+                    <input type="number" value="${t.points}" onchange="updateMainScore(${i}, this.value)" class="input-dark w-24 text-xl font-black focus:ring-2 ring-indigo-500 outline-none">
                 </div>
             `).join('');
         }
-    </script>
+    }
+
+    function updateMainScore(index, val) {
+        festData.overall[index].points = parseInt(val) || 0;
+    }
+
+    function renderAdminCat(catId) {
+        document.getElementById('admin-cat-editor').innerHTML = `
+            ${festData.categories[catId].map((p, i) => `
+                <div class="grid grid-cols-4 gap-2 items-center mb-2">
+                    <span class="text-[10px] font-bold">RANK ${i+1}</span>
+                    <input type="text" value="${p.name}" placeholder="Name" onchange="festData.categories['${catId}'][${i}].name = this.value" class="input-dark text-left">
+                    <input type="text" value="${p.team}" placeholder="Team" onchange="festData.categories['${catId}'][${i}].team = this.value" class="input-dark uppercase">
+                    <input type="number" value="${p.pts}" placeholder="Pts" onchange="festData.categories['${catId}'][${i}].pts = parseInt(this.value) || 0" class="input-dark font-black">
+                </div>
+            `).join('')}
+        `;
+    }
+
+    function unlockAdmin() {
+        if(prompt("Enter Admin Key:") === "456456") {
+            document.getElementById('admin-panel').style.display = 'block';
+            renderAdminCat('subJunior');
+            window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' });
+        }
+    }
+
+    function saveData() {
+        socket.emit('updateData', festData);
+        alert("Live Broadcast Successful!");
+    }
+
+    gsap.to(".live-dot", { opacity: 0.3, repeat: -1, yoyo: true, duration: 0.8 });
+</script>
 </body>
 </html>
