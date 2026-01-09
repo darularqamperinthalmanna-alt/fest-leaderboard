@@ -8,17 +8,17 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server);
 
-// Use the environment variable you set in Step 2
+// Connect using the Environment Variable you just added
 const redisClient = createClient({
-    url: process.env.REDIS_URL
+    url: process.env.REDIS_URL || 'redis://localhost:6379'
 });
 
-redisClient.on('error', err => console.log('Redis Error', err));
+redisClient.on('error', err => console.log('Database Error:', err));
 
 async function startServer() {
     await redisClient.connect();
-    
-    // Load initial data from Redis
+    console.log("Connected to fest-db");
+
     let savedData = await redisClient.get('festData');
     let festData = savedData ? JSON.parse(savedData) : {
         overall: [
@@ -34,6 +34,7 @@ async function startServer() {
         socket.emit('initData', festData);
         socket.on('updateData', async (newData) => {
             festData = newData;
+            // Save to Redis so scores never reset to zero
             await redisClient.set('festData', JSON.stringify(festData));
             io.emit('dataChanged', festData);
         });
