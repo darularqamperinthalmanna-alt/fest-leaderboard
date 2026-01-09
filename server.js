@@ -2,7 +2,6 @@ const express = require('express');
 const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
-const fs = require('fs');
 
 const app = express();
 const server = http.createServer(app);
@@ -10,7 +9,8 @@ const io = new Server(server, {
     cors: { origin: "*" }
 });
 
-const DATA_FILE = path.join(__dirname, 'data.json');
+// IMPORTANT: This tells the server to look INSIDE the 'public' folder for your website
+app.use(express.static(path.join(__dirname, 'public')));
 
 // Default Data
 let festData = {
@@ -25,27 +25,16 @@ let festData = {
     }
 };
 
-// Load existing data if it exists
-if (fs.existsSync(DATA_FILE)) {
-    try {
-        festData = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
-    } catch (e) { console.log("Error reading data file"); }
-}
-
-app.use(express.static(path.join(__dirname, 'public')));
-
 io.on('connection', (socket) => {
     socket.emit('initData', festData);
-
     socket.on('updateData', (newData) => {
         festData = newData;
-        fs.writeFileSync(DATA_FILE, JSON.stringify(festData));
         io.emit('dataChanged', festData);
     });
 });
 
-// IMPORTANT: process.env.PORT is required for Render/Cloud
+// Use Render's port or default to 3000
 const PORT = process.env.PORT || 3000;
 server.listen(PORT, '0.0.0.0', () => {
-    console.log(`Server live on port ${PORT}`);
+    console.log(`SERVER RUNNING ON PORT ${PORT}`);
 });
