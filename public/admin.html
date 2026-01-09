@@ -2,90 +2,54 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Admin - Secure Login</title>
+    <title>Admin Panel</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="/socket.io/socket.io.js"></script>
-    <style>
-        .admin-input { background: #f3f4f6; border: 2px solid #e5e7eb; padding: 10px; border-radius: 12px; font-weight: 900; width: 100%; text-align: center; }
-        #auth-screen { background: #0f172a; z-index: 999; }
-        .tab-active { background: #4f46e5 !important; color: white !important; }
-    </style>
 </head>
-<body class="bg-slate-50 min-h-screen">
+<body class="bg-slate-900 min-h-screen flex items-center justify-center p-4">
 
-    <div id="auth-screen" class="fixed inset-0 flex items-center justify-center p-6">
-        <div class="bg-white p-8 rounded-[2rem] shadow-2xl w-full max-w-sm text-center">
-            <h2 class="text-xl font-black mb-4">ADMIN ACCESS</h2>
-            <input type="password" id="pass-field" placeholder="Enter Key" 
-                   class="w-full p-4 border-2 rounded-xl mb-4 text-center text-xl outline-none focus:border-indigo-500">
-            <button onclick="verifyAccess()" class="w-full bg-indigo-600 text-white font-black py-4 rounded-xl">UNLOCK</button>
-            <p id="err-msg" class="text-red-500 mt-4 font-bold hidden">Invalid Password</p>
-        </div>
+    <div id="login-box" class="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-sm text-center">
+        <h2 class="text-2xl font-black mb-6">ADMIN KEY</h2>
+        <input type="password" id="pass" placeholder="••••••" class="w-full p-4 border-2 rounded-2xl mb-4 text-center text-xl">
+        <button onclick="login()" class="w-full bg-indigo-600 text-white font-black py-4 rounded-2xl">UNLOCK</button>
     </div>
 
-    <div id="management-content" class="hidden p-4 md:p-10">
-        <div class="max-w-5xl mx-auto">
-            <header class="flex justify-between items-center mb-10 bg-white p-6 rounded-3xl shadow-sm border">
-                <h1 class="font-black text-xl">POINT MANAGEMENT</h1>
-                <button onclick="saveData()" class="bg-green-600 text-white px-6 py-2 rounded-xl font-bold">PUSH LIVE</button>
-            </header>
-
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div id="main-editor" class="space-y-4"></div>
-                <div class="lg:col-span-2 bg-white p-6 rounded-[2rem] shadow-sm border">
-                    <div class="flex gap-2 mb-6 border-b pb-4">
-                        <button onclick="changeTab('subJunior')" class="tab-btn px-4 py-2 bg-gray-100 rounded-lg text-xs font-bold">Sub-Junior</button>
-                        <button onclick="changeTab('junior')" class="tab-btn px-4 py-2 bg-gray-100 rounded-lg text-xs font-bold">Junior</button>
-                        <button onclick="changeTab('senior')" class="tab-btn px-4 py-2 bg-gray-100 rounded-lg text-xs font-bold">Senior</button>
-                    </div>
-                    <div id="cat-editor" class="space-y-2"></div>
-                </div>
-            </div>
+    <div id="admin-panel" class="hidden w-full max-w-4xl bg-white rounded-[2.5rem] p-8 shadow-2xl">
+        <div class="flex justify-between items-center mb-8">
+            <h1 class="font-black text-2xl uppercase">Edit Points</h1>
+            <button onclick="save()" class="bg-emerald-500 text-white px-8 py-3 rounded-2xl font-black shadow-lg hover:bg-emerald-600">PUSH LIVE</button>
         </div>
+        <div id="inputs" class="grid grid-cols-1 md:grid-cols-2 gap-6"></div>
     </div>
 
     <script>
         const socket = io();
-        // Initialize with default structure to prevent "render" crashes
-        let festData = { 
-            overall: [{name:'ASKARIYYA', points:0}, {name:'KUTHAIBA', points:0}], 
-            categories: { subJunior: Array(5).fill({name:'',team:'',pts:0}), junior: Array(5).fill({name:'',team:'',pts:0}), senior: Array(5).fill({name:'',team:'',pts:0}) } 
-        };
-        let currentTab = 'subJunior';
+        let localData = {};
 
-        function verifyAccess() {
-            const input = document.getElementById('pass-field').value;
-            if(input === "783asu") {
-                document.getElementById('auth-screen').classList.add('hidden');
-                document.getElementById('management-content').classList.remove('hidden');
-                renderAll();
-            } else {
-                document.getElementById('err-msg').classList.remove('hidden');
+        function login() {
+            if(document.getElementById('pass').value === "783asu") {
+                document.getElementById('login-box').style.display = 'none';
+                document.getElementById('admin-panel').style.display = 'block';
             }
         }
 
-        socket.on('initData', (data) => { if(data) festData = data; renderAll(); });
-
-        function renderAll() {
-            document.getElementById('main-editor').innerHTML = festData.overall.map((t, i) => `
-                <div class="bg-white p-4 rounded-2xl border">
-                    <label class="text-[10px] font-bold text-gray-400">${t.name}</label>
-                    <input type="number" value="${t.points}" onchange="festData.overall[${i}].points=parseInt(this.value)||0" class="admin-input">
+        socket.on('initData', (data) => {
+            localData = data;
+            const container = document.getElementById('inputs');
+            container.innerHTML = localData.overall.map((t, i) => `
+                <div class="bg-slate-50 p-6 rounded-2xl border-2">
+                    <label class="block font-black text-slate-400 mb-2 uppercase">${t.name}</label>
+                    <input type="number" value="${t.points}" 
+                           onchange="localData.overall[${i}].points = parseInt(this.value) || 0"
+                           class="w-full p-4 text-3xl font-black text-center rounded-xl border-2 border-indigo-100">
                 </div>
             `).join('');
+        });
 
-            document.getElementById('cat-editor').innerHTML = festData.categories[currentTab].map((p, i) => `
-                <div class="grid grid-cols-12 gap-2 bg-gray-50 p-2 rounded-lg">
-                    <input type="text" value="${p.name}" onchange="festData.categories['${currentTab}'][${i}].name=this.value" class="col-span-6 p-1 text-xs border rounded" placeholder="Name">
-                    <input type="text" value="${p.team}" onchange="festData.categories['${currentTab}'][${i}].team=this.value" class="col-span-3 p-1 text-xs border rounded" placeholder="Team">
-                    <input type="number" value="${p.pts}" onchange="festData.categories['${currentTab}'][${i}].pts=parseInt(this.value)||0" class="col-span-3 p-1 text-xs border rounded text-right">
-                </div>
-            `).join('');
+        function save() {
+            socket.emit('updateData', localData);
+            alert("BROADCAST SUCCESSFUL!");
         }
-
-        function changeTab(t) { currentTab = t; renderAll(); }
-        function saveData() { socket.emit('updateData', festData); alert("Updates Sent!"); }
     </script>
 </body>
 </html>
