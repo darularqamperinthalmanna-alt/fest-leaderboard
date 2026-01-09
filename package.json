@@ -1,5 +1,17 @@
-"dependencies": {
-  "express": "^4.18.2",
-  "redis": "^4.6.10",
-  "socket.io": "^4.7.2"
+{
+  "name": "fest-leaderboard",
+  "version": "1.0.0",
+  "description": "Live Leaderboard for Arqamiyya Art's Fest",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "express": "^4.18.2",
+    "socket.io": "^4.7.2",
+    "redis": "^4.6.10"
+  },
+  "engines": {
+    "node": "22.16.0"
+  }
 }
