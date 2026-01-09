@@ -3,68 +3,43 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fest Admin - Secure Access</title>
+    <title>Admin - Secure Login</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="/socket.io/socket.io.js"></script>
     <style>
-        .admin-input { background: #f3f4f6; border: 2px solid #e5e7eb; padding: 12px; border-radius: 12px; font-weight: 900; font-size: 1.5rem; width: 100%; text-align: center; }
-        .admin-input:focus { border-color: #4f46e5; outline: none; background: white; }
-        #auth-screen { background: #0f172a; }
-        #management-content { display: none; }
-        .tab-active { background-color: #4f46e5 !important; color: white !important; }
+        .admin-input { background: #f3f4f6; border: 2px solid #e5e7eb; padding: 10px; border-radius: 12px; font-weight: 900; width: 100%; text-align: center; }
+        #auth-screen { background: #0f172a; z-index: 999; }
+        .tab-active { background: #4f46e5 !important; color: white !important; }
     </style>
 </head>
 <body class="bg-slate-50 min-h-screen">
 
-    <div id="auth-screen" class="fixed inset-0 z-[100] flex items-center justify-center p-6">
-        <div class="bg-white p-8 rounded-[2rem] shadow-2xl w-full max-w-md text-center">
-            <div class="mb-6 inline-flex items-center justify-center w-16 h-16 bg-red-100 text-red-600 rounded-2xl">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-            </div>
-            <h2 class="text-2xl font-black text-slate-800 mb-2">RESTRICTED AREA</h2>
-            <p class="text-slate-500 text-sm mb-8">Enter Authorization Key to access Score Management</p>
-            
-            <input type="password" id="pass-field" placeholder="Enter Password" 
-                   class="w-full p-4 border-2 border-slate-100 bg-slate-50 rounded-2xl mb-4 text-center text-xl tracking-widest outline-none focus:border-indigo-500 transition-all">
-            
-            <button onclick="verifyAccess()" 
-                    class="w-full bg-slate-900 text-white font-black py-4 rounded-2xl hover:bg-black transition-all shadow-xl active:scale-95">
-                VERIFY & UNLOCK
-            </button>
-            <p id="err-msg" class="text-red-600 mt-4 font-bold text-sm hidden">Invalid Authorization Key</p>
+    <div id="auth-screen" class="fixed inset-0 flex items-center justify-center p-6">
+        <div class="bg-white p-8 rounded-[2rem] shadow-2xl w-full max-w-sm text-center">
+            <h2 class="text-xl font-black mb-4">ADMIN ACCESS</h2>
+            <input type="password" id="pass-field" placeholder="Enter Key" 
+                   class="w-full p-4 border-2 rounded-xl mb-4 text-center text-xl outline-none focus:border-indigo-500">
+            <button onclick="verifyAccess()" class="w-full bg-indigo-600 text-white font-black py-4 rounded-xl">UNLOCK</button>
+            <p id="err-msg" class="text-red-500 mt-4 font-bold hidden">Invalid Password</p>
         </div>
     </div>
 
-    <div id="management-content" class="p-4 md:p-10">
+    <div id="management-content" class="hidden p-4 md:p-10">
         <div class="max-w-5xl mx-auto">
-            <header class="flex flex-col md:flex-row justify-between items-center gap-4 mb-10 bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
-                <div>
-                    <h1 class="text-2xl font-black text-slate-800 uppercase">Point Management</h1>
-                    <p class="text-indigo-600 font-bold text-xs tracking-widest">AUTHORIZED ACCESS ONLY</p>
-                </div>
-                <div class="flex gap-2">
-                    <button onclick="location.reload()" class="bg-slate-100 text-slate-500 px-4 py-3 rounded-xl font-bold text-xs uppercase">Lock System</button>
-                    <button onclick="saveData()" class="bg-indigo-600 hover:bg-indigo-700 text-white px-8 py-3 rounded-xl font-black transition-all shadow-lg shadow-indigo-200">
-                        PUSH UPDATES LIVE
-                    </button>
-                </div>
+            <header class="flex justify-between items-center mb-10 bg-white p-6 rounded-3xl shadow-sm border">
+                <h1 class="font-black text-xl">POINT MANAGEMENT</h1>
+                <button onclick="saveData()" class="bg-green-600 text-white px-6 py-2 rounded-xl font-bold">PUSH LIVE</button>
             </header>
 
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                <div class="lg:col-span-1 space-y-4">
-                    <h2 class="font-black text-slate-400 text-xs uppercase px-2 tracking-widest">Main Teams</h2>
-                    <div id="main-editor" class="space-y-4"></div>
-                </div>
-
-                <div class="lg:col-span-2 bg-white p-8 rounded-[2rem] shadow-sm border border-slate-200">
-                    <div class="flex gap-4 mb-6 border-b border-slate-100 pb-4 overflow-x-auto">
-                        <button id="tab-subJunior" onclick="changeTab('subJunior')" class="tab-btn font-black text-[10px] uppercase px-4 py-2 rounded-lg bg-slate-100 transition-all">Sub-Junior</button>
-                        <button id="tab-junior" onclick="changeTab('junior')" class="tab-btn font-black text-[10px] uppercase px-4 py-2 rounded-lg bg-slate-100 transition-all">Junior</button>
-                        <button id="tab-senior" onclick="changeTab('senior')" class="tab-btn font-black text-[10px] uppercase px-4 py-2 rounded-lg bg-slate-100 transition-all">Senior</button>
+                <div id="main-editor" class="space-y-4"></div>
+                <div class="lg:col-span-2 bg-white p-6 rounded-[2rem] shadow-sm border">
+                    <div class="flex gap-2 mb-6 border-b pb-4">
+                        <button onclick="changeTab('subJunior')" class="tab-btn px-4 py-2 bg-gray-100 rounded-lg text-xs font-bold">Sub-Junior</button>
+                        <button onclick="changeTab('junior')" class="tab-btn px-4 py-2 bg-gray-100 rounded-lg text-xs font-bold">Junior</button>
+                        <button onclick="changeTab('senior')" class="tab-btn px-4 py-2 bg-gray-100 rounded-lg text-xs font-bold">Senior</button>
                     </div>
-                    <div id="cat-editor" class="space-y-3"></div>
+                    <div id="cat-editor" class="space-y-2"></div>
                 </div>
             </div>
         </div>
@@ -72,80 +47,45 @@
 
     <script>
         const socket = io();
-        let festData = {};
+        // Initialize with default structure to prevent "render" crashes
+        let festData = { 
+            overall: [{name:'ASKARIYYA', points:0}, {name:'KUTHAIBA', points:0}], 
+            categories: { subJunior: Array(5).fill({name:'',team:'',pts:0}), junior: Array(5).fill({name:'',team:'',pts:0}), senior: Array(5).fill({name:'',team:'',pts:0}) } 
+        };
         let currentTab = 'subJunior';
 
-        // 1. Authorization Function
         function verifyAccess() {
-            const secret = "783asu"; // Your requested password
             const input = document.getElementById('pass-field').value;
-
-            if(input === secret) {
-                document.getElementById('auth-screen').style.display = 'none';
-                document.getElementById('management-content').style.display = 'block';
-                changeTab('subJunior');
+            if(input === "783asu") {
+                document.getElementById('auth-screen').classList.add('hidden');
+                document.getElementById('management-content').classList.remove('hidden');
+                renderAll();
             } else {
-                const err = document.getElementById('err-msg');
-                err.classList.remove('hidden');
-                document.getElementById('pass-field').value = '';
-                setTimeout(() => err.classList.add('hidden'), 2000);
+                document.getElementById('err-msg').classList.remove('hidden');
             }
         }
 
-        // Support 'Enter' key press
-        document.getElementById('pass-field').addEventListener('keypress', (e) => {
-            if(e.key === 'Enter') verifyAccess();
-        });
-
-        // 2. Data Handling
-        socket.on('initData', (data) => { 
-            festData = data; 
-            renderAll(); 
-        });
+        socket.on('initData', (data) => { if(data) festData = data; renderAll(); });
 
         function renderAll() {
-            if(!festData.overall) return;
-
-            // Render Team Score Inputs
             document.getElementById('main-editor').innerHTML = festData.overall.map((t, i) => `
-                <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-                    <label class="block text-[10px] font-black text-slate-400 mb-2 uppercase">${t.name}</label>
-                    <input type="number" value="${t.points}" onchange="updateTeamScore(${i}, this.value)" class="admin-input">
+                <div class="bg-white p-4 rounded-2xl border">
+                    <label class="text-[10px] font-bold text-gray-400">${t.name}</label>
+                    <input type="number" value="${t.points}" onchange="festData.overall[${i}].points=parseInt(this.value)||0" class="admin-input">
                 </div>
             `).join('');
 
-            // Render Category Ranking Inputs
             document.getElementById('cat-editor').innerHTML = festData.categories[currentTab].map((p, i) => `
-                <div class="grid grid-cols-12 gap-3 items-center bg-slate-50 p-3 rounded-xl border border-slate-100">
-                    <div class="col-span-1 text-[10px] font-black text-slate-300">#${i+1}</div>
-                    <div class="col-span-5">
-                        <input type="text" value="${p.name}" onchange="festData.categories['${currentTab}'][${i}].name=this.value" class="w-full bg-transparent border-b border-slate-200 focus:border-indigo-500 outline-none uppercase font-bold text-sm" placeholder="Student Name">
-                    </div>
-                    <div class="col-span-3">
-                        <input type="text" value="${p.team}" onchange="festData.categories['${currentTab}'][${i}].team=this.value" class="w-full text-[10px] bg-white border rounded p-1 uppercase font-black text-indigo-600 text-center" placeholder="Team">
-                    </div>
-                    <div class="col-span-3 text-right">
-                        <input type="number" value="${p.pts}" onchange="festData.categories['${currentTab}'][${i}].pts=parseInt(this.value) || 0" class="w-full font-black text-right bg-transparent outline-none text-lg">
-                    </div>
+                <div class="grid grid-cols-12 gap-2 bg-gray-50 p-2 rounded-lg">
+                    <input type="text" value="${p.name}" onchange="festData.categories['${currentTab}'][${i}].name=this.value" class="col-span-6 p-1 text-xs border rounded" placeholder="Name">
+                    <input type="text" value="${p.team}" onchange="festData.categories['${currentTab}'][${i}].team=this.value" class="col-span-3 p-1 text-xs border rounded" placeholder="Team">
+                    <input type="number" value="${p.pts}" onchange="festData.categories['${currentTab}'][${i}].pts=parseInt(this.value)||0" class="col-span-3 p-1 text-xs border rounded text-right">
                 </div>
             `).join('');
         }
 
-        function updateTeamScore(idx, val) {
-            festData.overall[idx].points = parseInt(val) || 0;
-        }
-
-        function changeTab(tab) {
-            currentTab = tab;
-            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('tab-active'));
-            document.getElementById('tab-' + tab).classList.add('tab-active');
-            renderAll();
-        }
-
-        function saveData() {
-            socket.emit('updateData', festData);
-            alert("BROADCAST SUCCESS: Data is now live on all audience screens.");
-        }
+        function changeTab(t) { currentTab = t; renderAll(); }
+        function saveData() { socket.emit('updateData', festData); alert("Updates Sent!"); }
     </script>
 </body>
 </html>
